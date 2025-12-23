@@ -5,10 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ton Cota - Gerador de Orçamentos</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <!-- Bibliotecas PDF via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -18,35 +23,382 @@
         }
         .receipt-paper {
             background: white;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             position: relative;
+            color: #000;
         }
-        /* Custom scrollbar for better dark mode look */
-        ::-webkit-scrollbar {
-            width: 8px;
+        .btn-neon {
+            background-color: #00c868;
+            color: #000;
+            transition: all 0.3s ease;
         }
-        ::-webkit-scrollbar-track {
-            background: #1d1d1d;
+        .btn-neon:hover {
+            background-color: #00e075;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 200, 104, 0.3);
         }
-        ::-webkit-scrollbar-thumb {
-            background: #333;
-            border-radius: 4px;
+        .btn-neon:active {
+            transform: translateY(0);
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #444;
+        input::placeholder {
+            color: #555;
         }
+        /* Esconder setas de input number */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        /* Scrollbar estilizada */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1d1d1d; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     </style>
 <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.3/",
     "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
 </head>
-<body>
-    <div id="root"></div>
+<body class="min-h-screen flex flex-col pb-10">
+
+    <!-- Banner de Monetização -->
+    <div class="sticky top-0 z-50 bg-[#00c868] py-3 px-4 shadow-lg">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <p class="text-black font-bold text-center md:text-left text-sm">
+                Dica: Pague menos taxas! Maquininha com 73% de desconto e garantia vitalícia.
+            </p>
+            <a 
+                href="https://ton.com.br/checkout/cart/?coupon=RODRIGOGUIMARAES10&productId=TONBLACK_TIER_SMART_POS&userAnticipation=0&userTag=tonblack_tier&utm_medium=invite_share&utm_source=revendedor"
+                target="_blank"
+                class="bg-black text-white px-6 py-2 rounded-full font-bold text-xs uppercase tracking-widest hover:bg-gray-800 transition-colors"
+            >
+                Pegar Desconto
+            </a>
+        </div>
+    </div>
+
+    <main class="flex-grow p-4 md:p-10 max-w-7xl mx-auto w-full">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+            
+            <!-- Coluna Esquerda: Formulário -->
+            <div class="space-y-8">
+                <header>
+                    <h1 class="text-4xl font-black text-white flex items-center gap-1 italic">
+                        <span class="text-[#00c868]">TON</span>COTA
+                    </h1>
+                    <p class="text-gray-400 font-medium mt-1">Gerador de recibos profissionais para autônomos.</p>
+                </header>
+
+                <!-- Dados do Prestador -->
+                <section class="bg-[#242424] p-6 rounded-2xl border border-gray-800 shadow-2xl space-y-4">
+                    <div class="flex items-center gap-2 text-[#00c868] font-bold uppercase text-[10px] tracking-widest">
+                        <div class="w-1.5 h-1.5 rounded-full bg-[#00c868]"></div>
+                        Dados do Prestador
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="text-[10px] text-gray-500 font-bold uppercase">Seu Nome / Empresa</label>
+                            <input id="in-providerName" type="text" placeholder="Ex: Rodrigo Silva" 
+                                class="w-full bg-[#1d1d1d] border border-gray-800 text-white rounded-xl p-3 focus:ring-1 focus:ring-[#00c868] outline-none text-sm">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] text-gray-500 font-bold uppercase">Seu WhatsApp</label>
+                            <input id="in-providerWhatsApp" type="tel" placeholder="11999999999" 
+                                class="w-full bg-[#1d1d1d] border border-gray-800 text-white rounded-xl p-3 focus:ring-1 focus:ring-[#00c868] outline-none text-sm">
+                        </div>
+                        <div class="md:col-span-2 space-y-1">
+                            <label class="text-[10px] text-gray-500 font-bold uppercase">Chave Pix</label>
+                            <input id="in-pixKey" type="text" placeholder="CPF, E-mail ou Aleatória" 
+                                class="w-full bg-[#1d1d1d] border border-gray-800 text-white rounded-xl p-3 focus:ring-1 focus:ring-[#00c868] outline-none text-sm">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Dados do Cliente -->
+                <section class="bg-[#242424] p-6 rounded-2xl border border-gray-800 shadow-2xl space-y-4">
+                    <div class="flex items-center gap-2 text-[#00c868] font-bold uppercase text-[10px] tracking-widest">
+                        <div class="w-1.5 h-1.5 rounded-full bg-[#00c868]"></div>
+                        Dados do Cliente
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-gray-500 font-bold uppercase">Nome do Cliente</label>
+                        <input id="in-clientName" type="text" placeholder="Ex: Maria Oliveira" 
+                            class="w-full bg-[#1d1d1d] border border-gray-800 text-white rounded-xl p-3 focus:ring-1 focus:ring-[#00c868] outline-none text-sm">
+                    </div>
+                </section>
+
+                <!-- Lista de Serviços -->
+                <section class="bg-[#242424] p-6 rounded-2xl border border-gray-800 shadow-2xl">
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex items-center gap-2 text-[#00c868] font-bold uppercase text-[10px] tracking-widest">
+                            <div class="w-1.5 h-1.5 rounded-full bg-[#00c868]"></div>
+                            Serviços
+                        </div>
+                        <button id="btn-addService" class="text-[#00c868] text-[10px] font-black uppercase hover:opacity-80 transition-all">+ Adicionar Linha</button>
+                    </div>
+                    
+                    <div id="services-container" class="space-y-4">
+                        <!-- Linhas dinâmicas entram aqui -->
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-gray-800 flex justify-between items-center">
+                        <div class="text-gray-500 font-bold uppercase text-xs">Total</div>
+                        <div id="display-total" class="text-3xl font-black text-[#00c868]">R$ 0,00</div>
+                    </div>
+                </section>
+
+                <!-- Botões de Ação -->
+                <div class="flex flex-col md:flex-row gap-4 pt-4 sticky bottom-4 md:relative">
+                    <button id="btn-shareZap" class="flex-1 btn-neon font-black py-5 rounded-2xl flex items-center justify-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/>
+                        </svg>
+                        ENVIAR NO ZAP
+                    </button>
+                    <button id="btn-download" class="md:w-48 bg-[#333] text-white font-bold py-5 rounded-2xl hover:bg-[#444] transition-all flex items-center justify-center gap-2">
+                        PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- Coluna Direita: Preview -->
+            <div class="flex justify-center lg:justify-start lg:sticky lg:top-24">
+                <div class="flex flex-col items-center w-full max-w-[440px]">
+                    <div class="text-[#00c868] text-[9px] font-black uppercase tracking-[0.3em] mb-4">Prévia do Recibo</div>
+                    
+                    <div id="receipt-capture" class="receipt-paper w-full min-h-[600px] p-10 flex flex-col rounded-sm">
+                        
+                        <div class="mb-10 text-center">
+                            <h2 class="text-2xl font-black uppercase tracking-tighter mb-1">Recibo de Pagamento</h2>
+                            <div class="h-1 w-12 bg-black mx-auto mb-4"></div>
+                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Digital Service</p>
+                        </div>
+
+                        <div class="space-y-6 mb-10">
+                            <div>
+                                <p class="text-[8px] text-gray-400 font-black uppercase mb-1">Prestador</p>
+                                <p id="prev-providerName" class="text-lg font-black tracking-tight leading-none uppercase">Nome do Prestador</p>
+                                <p id="prev-pix" class="text-[10px] font-medium mt-1 hidden">
+                                    <span class="text-gray-400">PIX:</span> <span id="prev-pixValue"></span>
+                                </p>
+                            </div>
+                            <div class="pt-4 border-t border-gray-100">
+                                <p class="text-[8px] text-gray-400 font-black uppercase mb-1">Cliente</p>
+                                <p id="prev-clientName" class="text-lg font-black tracking-tight leading-none uppercase">Nome do Cliente</p>
+                            </div>
+                        </div>
+
+                        <div class="flex-grow">
+                            <p class="text-[8px] text-gray-400 font-black uppercase mb-4 tracking-widest">Itens do Orçamento</p>
+                            <div id="prev-items-list" class="space-y-4">
+                                <!-- Itens dinâmicos -->
+                            </div>
+                        </div>
+
+                        <div class="mt-12">
+                            <div class="flex justify-between items-end border-t-2 border-black pt-6">
+                                <div class="text-[10px] font-black uppercase">Valor Total</div>
+                                <div id="prev-totalValue" class="text-4xl font-black text-[#00c868] tracking-tighter">R$ 0,00</div>
+                            </div>
+                            <div class="mt-10 pt-6 border-t border-gray-100 text-center">
+                                <p class="text-[8px] text-gray-300 font-bold uppercase tracking-[0.2em]">Autenticado via Ton Cota</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="text-center py-10 opacity-30 text-[10px] font-black uppercase tracking-[0.4em]">
+        Ton Cota &copy; 2024
+    </footer>
+
+    <script>
+        // --- ESTADO DA APLICAÇÃO ---
+        let services = [{ id: Date.now(), description: '', price: 0 }];
+
+        // --- UTILITÁRIOS ---
+        const formatBRL = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+        
+        // --- SELETORES ---
+        const servicesContainer = document.getElementById('services-container');
+        const prevItemsList = document.getElementById('prev-items-list');
+        const displayTotal = document.getElementById('display-total');
+        const prevTotalValue = document.getElementById('prev-totalValue');
+        const btnAddService = document.getElementById('btn-addService');
+
+        const inProviderName = document.getElementById('in-providerName');
+        const inProviderWhatsApp = document.getElementById('in-providerWhatsApp');
+        const inPixKey = document.getElementById('in-pixKey');
+        const inClientName = document.getElementById('in-clientName');
+
+        const prevProviderName = document.getElementById('prev-providerName');
+        const prevClientName = document.getElementById('prev-clientName');
+        const prevPix = document.getElementById('prev-pix');
+        const prevPixValue = document.getElementById('prev-pixValue');
+
+        // --- LÓGICA DE RENDERIZAÇÃO ---
+        
+        // Atualiza apenas a prévia para não perder o foco nos inputs
+        function updatePreview() {
+            const total = services.reduce((acc, s) => acc + (parseFloat(s.price) || 0), 0);
+            
+            // Texto simples
+            prevProviderName.innerText = inProviderName.value || "Nome do Prestador";
+            prevClientName.innerText = inClientName.value || "Nome do Cliente";
+            
+            // Pix logic
+            if (inPixKey.value) {
+                prevPix.classList.remove('hidden');
+                prevPixValue.innerText = inPixKey.value;
+            } else {
+                prevPix.classList.add('hidden');
+            }
+
+            // Lista de itens na prévia
+            prevItemsList.innerHTML = services.map((s, i) => `
+                <div class="flex justify-between gap-4 pb-2 border-b border-gray-50">
+                    <div class="text-[12px] font-bold uppercase leading-tight">${s.description || 'Serviço ' + (i+1)}</div>
+                    <div class="text-[12px] font-black">${formatBRL(s.price || 0)}</div>
+                </div>
+            `).join('');
+
+            // Totais
+            const formattedTotal = formatBRL(total);
+            displayTotal.innerText = formattedTotal;
+            prevTotalValue.innerText = formattedTotal;
+        }
+
+        // Renderiza a lista de inputs (chamado apenas ao adicionar/remover linha)
+        function renderInputList() {
+            servicesContainer.innerHTML = '';
+            services.forEach((s) => {
+                const div = document.createElement('div');
+                div.className = 'flex gap-3 items-center';
+                div.innerHTML = `
+                    <div class="flex-grow">
+                        <input type="text" placeholder="Descrição..." value="${s.description}"
+                            class="service-desc w-full bg-[#1d1d1d] border border-gray-800 text-white rounded-xl p-3 focus:ring-1 focus:ring-[#00c868] outline-none text-sm">
+                    </div>
+                    <div class="w-24">
+                        <input type="number" placeholder="0,00" value="${s.price || ''}"
+                            class="service-price w-full bg-[#1d1d1d] border border-gray-800 text-white rounded-xl p-3 focus:ring-1 focus:ring-[#00c868] outline-none text-sm font-bold">
+                    </div>
+                    <button class="btn-remove p-2 text-gray-600 hover:text-red-500 transition-colors">
+                        <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+                    </button>
+                `;
+
+                // Eventos individuais para evitar re-render total no input
+                const descInput = div.querySelector('.service-desc');
+                const priceInput = div.querySelector('.service-price');
+                const btnRemove = div.querySelector('.btn-remove');
+
+                descInput.oninput = (e) => { s.description = e.target.value; updatePreview(); };
+                priceInput.oninput = (e) => { s.price = e.target.value; updatePreview(); };
+                btnRemove.onclick = () => {
+                    if (services.length > 1) {
+                        services = services.filter(item => item.id !== s.id);
+                        renderInputList();
+                        updatePreview();
+                    }
+                };
+
+                servicesContainer.appendChild(div);
+            });
+        }
+
+        // --- EVENTOS GLOBAIS ---
+        btnAddService.onclick = () => {
+            services.push({ id: Date.now(), description: '', price: 0 });
+            renderInputList();
+            updatePreview();
+        };
+
+        [inProviderName, inProviderWhatsApp, inPixKey, inClientName].forEach(el => {
+            el.oninput = updatePreview;
+        });
+
+        // --- GERAÇÃO DE PDF ---
+        async function generateBlob() {
+            const captureArea = document.getElementById('receipt-capture');
+            const canvas = await html2canvas(captureArea, {
+                scale: 3,
+                useCORS: true,
+                backgroundColor: '#ffffff'
+            });
+            const imgData = canvas.toDataURL('image/png');
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'px',
+                format: [canvas.width / 3, canvas.height / 3]
+            });
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 3, canvas.height / 3);
+            return pdf.output('blob');
+        }
+
+        // --- AÇÕES ---
+        document.getElementById('btn-download').onclick = async () => {
+            const btn = document.getElementById('btn-download');
+            btn.innerText = '...';
+            try {
+                const blob = await generateBlob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Recibo_${inClientName.value || 'Cliente'}.pdf`;
+                a.click();
+                URL.revokeObjectURL(url);
+            } catch(e) { console.error(e); }
+            btn.innerText = 'PDF';
+        };
+
+        document.getElementById('btn-shareZap').onclick = async () => {
+            const btn = document.getElementById('btn-shareZap');
+            const originalHTML = btn.innerHTML;
+            btn.innerText = 'GERANDO PDF...';
+
+            const total = services.reduce((acc, s) => acc + (parseFloat(s.price) || 0), 0);
+            const message = `ORÇAMENTO - ${inProviderName.value || 'Prestador'}\nOlá ${inClientName.value || 'Cliente'}, aqui está o resumo do seu orçamento:\n\n💰 Valor Total: ${formatBRL(total)}\n${inPixKey.value ? '🔑 Chave Pix: ' + inPixKey.value : ''}\n\nPor favor, aguarde que vou lhe enviar o PDF detalhado em seguida.\n\nGerado via Ton Cota`.trim();
+
+            try {
+                const blob = await generateBlob();
+                const file = new File([blob], 'Recibo_TonCota.pdf', { type: 'application/pdf' });
+
+                // Se mobile e suporta share
+                if (navigator.share && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                    await navigator.share({
+                        files: [file],
+                        text: message,
+                        title: 'Seu Orçamento'
+                    });
+                } else {
+                    // Desktop ou Sem Suporte: Baixa e abre link
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'Recibo_TonCota.pdf';
+                    a.click();
+                    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+                }
+            } catch (e) {
+                window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+            } finally {
+                btn.innerHTML = originalHTML;
+            }
+        };
+
+        // Inicialização
+        renderInputList();
+        updatePreview();
+    </script>
 </body>
 </html>

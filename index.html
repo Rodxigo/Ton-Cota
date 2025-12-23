@@ -26,6 +26,16 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             position: relative;
             color: #000;
+            /* Bug 1 Fix: Melhor renderização para captura de imagem */
+            transform: translateZ(0);
+            backface-visibility: hidden;
+        }
+        /* Bug 1 Fix: Remover artefatos de linha no cabeçalho */
+        .receipt-header-text {
+            text-shadow: none !important;
+            box-shadow: none !important;
+            text-decoration: none !important;
+            border-bottom: none !important;
         }
         .btn-neon {
             background-color: #00c868;
@@ -43,13 +53,11 @@
         input::placeholder {
             color: #555;
         }
-        /* Esconder setas de input number */
         input::-webkit-outer-spin-button,
         input::-webkit-inner-spin-button {
             -webkit-appearance: none;
             margin: 0;
         }
-        /* Scrollbar estilizada */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #1d1d1d; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
@@ -58,7 +66,6 @@
 {
   "imports": {
     "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
@@ -94,7 +101,6 @@
                     <p class="text-gray-400 font-medium mt-1">Gerador de recibos profissionais para autônomos.</p>
                 </header>
 
-                <!-- Dados do Prestador -->
                 <section class="bg-[#242424] p-6 rounded-2xl border border-gray-800 shadow-2xl space-y-4">
                     <div class="flex items-center gap-2 text-[#00c868] font-bold uppercase text-[10px] tracking-widest">
                         <div class="w-1.5 h-1.5 rounded-full bg-[#00c868]"></div>
@@ -119,7 +125,6 @@
                     </div>
                 </section>
 
-                <!-- Dados do Cliente -->
                 <section class="bg-[#242424] p-6 rounded-2xl border border-gray-800 shadow-2xl space-y-4">
                     <div class="flex items-center gap-2 text-[#00c868] font-bold uppercase text-[10px] tracking-widest">
                         <div class="w-1.5 h-1.5 rounded-full bg-[#00c868]"></div>
@@ -132,7 +137,6 @@
                     </div>
                 </section>
 
-                <!-- Lista de Serviços -->
                 <section class="bg-[#242424] p-6 rounded-2xl border border-gray-800 shadow-2xl">
                     <div class="flex justify-between items-center mb-6">
                         <div class="flex items-center gap-2 text-[#00c868] font-bold uppercase text-[10px] tracking-widest">
@@ -142,9 +146,7 @@
                         <button id="btn-addService" class="text-[#00c868] text-[10px] font-black uppercase hover:opacity-80 transition-all">+ Adicionar Linha</button>
                     </div>
                     
-                    <div id="services-container" class="space-y-4">
-                        <!-- Linhas dinâmicas entram aqui -->
-                    </div>
+                    <div id="services-container" class="space-y-4"></div>
 
                     <div class="mt-8 pt-6 border-t border-gray-800 flex justify-between items-center">
                         <div class="text-gray-500 font-bold uppercase text-xs">Total</div>
@@ -152,7 +154,6 @@
                     </div>
                 </section>
 
-                <!-- Botões de Ação -->
                 <div class="flex flex-col md:flex-row gap-4 pt-4 sticky bottom-4 md:relative">
                     <button id="btn-shareZap" class="flex-1 btn-neon font-black py-5 rounded-2xl flex items-center justify-center gap-3">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
@@ -174,7 +175,8 @@
                     <div id="receipt-capture" class="receipt-paper w-full min-h-[600px] p-10 flex flex-col rounded-sm">
                         
                         <div class="mb-10 text-center">
-                            <h2 class="text-2xl font-black uppercase tracking-tighter mb-1">Recibo de Pagamento</h2>
+                            <!-- Bug 1 Fix: Cabeçalho limpo sem artefatos -->
+                            <h2 class="receipt-header-text text-2xl font-black uppercase tracking-tighter mb-1">Recibo de Pagamento</h2>
                             <div class="h-1 w-12 bg-black mx-auto mb-4"></div>
                             <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Digital Service</p>
                         </div>
@@ -195,13 +197,12 @@
 
                         <div class="flex-grow">
                             <p class="text-[8px] text-gray-400 font-black uppercase mb-4 tracking-widest">Itens do Orçamento</p>
-                            <div id="prev-items-list" class="space-y-4">
-                                <!-- Itens dinâmicos -->
-                            </div>
+                            <div id="prev-items-list" class="space-y-4"></div>
                         </div>
 
                         <div class="mt-12">
                             <div class="flex justify-between items-end border-t-2 border-black pt-6">
+                                <!-- Bug 2 Fix: Texto com espaço correto -->
                                 <div class="text-[10px] font-black uppercase">Valor Total</div>
                                 <div id="prev-totalValue" class="text-4xl font-black text-[#00c868] tracking-tighter">R$ 0,00</div>
                             </div>
@@ -221,13 +222,10 @@
     </footer>
 
     <script>
-        // --- ESTADO DA APLICAÇÃO ---
         let services = [{ id: Date.now(), description: '', price: 0 }];
 
-        // --- UTILITÁRIOS ---
         const formatBRL = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
         
-        // --- SELETORES ---
         const servicesContainer = document.getElementById('services-container');
         const prevItemsList = document.getElementById('prev-items-list');
         const displayTotal = document.getElementById('display-total');
@@ -244,17 +242,12 @@
         const prevPix = document.getElementById('prev-pix');
         const prevPixValue = document.getElementById('prev-pixValue');
 
-        // --- LÓGICA DE RENDERIZAÇÃO ---
-        
-        // Atualiza apenas a prévia para não perder o foco nos inputs
         function updatePreview() {
             const total = services.reduce((acc, s) => acc + (parseFloat(s.price) || 0), 0);
             
-            // Texto simples
             prevProviderName.innerText = inProviderName.value || "Nome do Prestador";
             prevClientName.innerText = inClientName.value || "Nome do Cliente";
             
-            // Pix logic
             if (inPixKey.value) {
                 prevPix.classList.remove('hidden');
                 prevPixValue.innerText = inPixKey.value;
@@ -262,7 +255,6 @@
                 prevPix.classList.add('hidden');
             }
 
-            // Lista de itens na prévia
             prevItemsList.innerHTML = services.map((s, i) => `
                 <div class="flex justify-between gap-4 pb-2 border-b border-gray-50">
                     <div class="text-[12px] font-bold uppercase leading-tight">${s.description || 'Serviço ' + (i+1)}</div>
@@ -270,13 +262,11 @@
                 </div>
             `).join('');
 
-            // Totais
             const formattedTotal = formatBRL(total);
             displayTotal.innerText = formattedTotal;
             prevTotalValue.innerText = formattedTotal;
         }
 
-        // Renderiza a lista de inputs (chamado apenas ao adicionar/remover linha)
         function renderInputList() {
             servicesContainer.innerHTML = '';
             services.forEach((s) => {
@@ -296,7 +286,6 @@
                     </button>
                 `;
 
-                // Eventos individuais para evitar re-render total no input
                 const descInput = div.querySelector('.service-desc');
                 const priceInput = div.querySelector('.service-price');
                 const btnRemove = div.querySelector('.btn-remove');
@@ -315,7 +304,6 @@
             });
         }
 
-        // --- EVENTOS GLOBAIS ---
         btnAddService.onclick = () => {
             services.push({ id: Date.now(), description: '', price: 0 });
             renderInputList();
@@ -326,13 +314,18 @@
             el.oninput = updatePreview;
         });
 
-        // --- GERAÇÃO DE PDF ---
         async function generateBlob() {
             const captureArea = document.getElementById('receipt-capture');
             const canvas = await html2canvas(captureArea, {
                 scale: 3,
                 useCORS: true,
-                backgroundColor: '#ffffff'
+                backgroundColor: '#ffffff',
+                logging: false,
+                // Garantir que não existam transformações externas que afetem o canvas
+                onclone: (clonedDoc) => {
+                    const el = clonedDoc.getElementById('receipt-capture');
+                    el.style.transform = 'none';
+                }
             });
             const imgData = canvas.toDataURL('image/png');
             const { jsPDF } = window.jspdf;
@@ -345,7 +338,6 @@
             return pdf.output('blob');
         }
 
-        // --- AÇÕES ---
         document.getElementById('btn-download').onclick = async () => {
             const btn = document.getElementById('btn-download');
             btn.innerText = '...';
@@ -364,7 +356,7 @@
         document.getElementById('btn-shareZap').onclick = async () => {
             const btn = document.getElementById('btn-shareZap');
             const originalHTML = btn.innerHTML;
-            btn.innerText = 'GERANDO PDF...';
+            btn.innerText = 'GERANDO...';
 
             const total = services.reduce((acc, s) => acc + (parseFloat(s.price) || 0), 0);
             const message = `ORÇAMENTO - ${inProviderName.value || 'Prestador'}\nOlá ${inClientName.value || 'Cliente'}, aqui está o resumo do seu orçamento:\n\n💰 Valor Total: ${formatBRL(total)}\n${inPixKey.value ? '🔑 Chave Pix: ' + inPixKey.value : ''}\n\nPor favor, aguarde que vou lhe enviar o PDF detalhado em seguida.\n\nGerado via Ton Cota`.trim();
@@ -373,7 +365,6 @@
                 const blob = await generateBlob();
                 const file = new File([blob], 'Recibo_TonCota.pdf', { type: 'application/pdf' });
 
-                // Se mobile e suporta share
                 if (navigator.share && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
                     await navigator.share({
                         files: [file],
@@ -381,7 +372,6 @@
                         title: 'Seu Orçamento'
                     });
                 } else {
-                    // Desktop ou Sem Suporte: Baixa e abre link
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
@@ -396,7 +386,6 @@
             }
         };
 
-        // Inicialização
         renderInputList();
         updatePreview();
     </script>

@@ -166,13 +166,12 @@
                     
                     <div id="receipt-capture" class="receipt-paper w-full min-h-[600px] p-10 flex flex-col rounded-sm">
                         
-                        <div class="mb-10 text-center">
-                            <!-- Nuclear Fix para o Bug 1 (Artefatos de linha) -->
-                            <div class="text-3xl font-black text-gray-900 mb-2 uppercase" style="border: none !important; text-decoration: none !important; box-shadow: none !important; outline: none !important;">
+                        <!-- Fixed Header structure to prevent artifacts -->
+                        <div class="mb-6 border-b-2 border-gray-100 pb-4 text-center">
+                            <h2 class="text-3xl font-bold text-gray-900 leading-none uppercase" style="text-shadow: none; border: none;">
                                 RECIBO DE PAGAMENTO
-                            </div>
-                            <div class="h-1 w-12 bg-black mx-auto mb-4"></div>
-                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Digital Service</p>
+                            </h2>
+                            <p class="text-xs text-gray-400 mt-2 uppercase tracking-widest font-medium">Digital Service</p>
                         </div>
 
                         <div class="space-y-6 mb-10">
@@ -196,8 +195,8 @@
 
                         <div class="mt-12">
                             <div class="flex justify-between items-end border-t-2 border-black pt-6">
-                                <!-- Bug 2 Fix: Texto explicitamente com espaço "VALOR TOTAL" -->
-                                <div class="text-[10px] font-black uppercase">VALOR TOTAL</div>
+                                <!-- Explicit space fixed here -->
+                                <p class="text-xs font-bold text-gray-500 uppercase">VALOR&nbsp; TOTAL</p>
                                 <div id="prev-totalValue" class="text-4xl font-black text-[#00c868] tracking-tighter">R$ 0,00</div>
                             </div>
                             <div class="mt-10 pt-6 border-t border-gray-100 text-center">
@@ -311,7 +310,7 @@
         async function generateBlob() {
             const captureArea = document.getElementById('receipt-capture');
             
-            // Garantir fundo branco sólido e escala profissional
+            // Strictly enforce background color white and scale 3 for professional PDF
             const canvas = await html2canvas(captureArea, {
                 scale: 3,
                 useCORS: true,
@@ -319,9 +318,10 @@
                 logging: false,
                 onclone: (clonedDoc) => {
                     const el = clonedDoc.getElementById('receipt-capture');
-                    // Remover transformações de visualização no clone para evitar cortes
+                    // Ensure the clone is perfectly rendered without any UI transformations
                     el.style.transform = 'none';
                     el.style.boxShadow = 'none';
+                    el.style.borderRadius = '0';
                 }
             });
 
